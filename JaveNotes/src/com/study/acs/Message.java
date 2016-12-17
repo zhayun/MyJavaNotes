@@ -101,7 +101,58 @@ abstract public class Message implements Serializable {
         return this;
     }
 
+    public void writeTo(OutputStream out) {
+        try {
+            MessageFactory mf = MessageFactory.newInstance();
+            SOAPFactory spf = SOAPFactory.newInstance();
 
+            String s = "<SOAP-ENV:Envelope";
+            s += " xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"";
+            s += " xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\"";
+            s += " xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"";
+            s += " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"";
+            s += " xmlns:cwmp=\"" + URN_CWMP + "\"><SOAP-ENV:Header></SOAP-ENV:Header><SOAP-ENV:Body></SOAP-ENV:Body></SOAP-ENV:Envelope>";
+            ByteArrayInputStream in = new ByteArrayInputStream(s.getBytes());
+            SOAPMessage msg = mf.createMessage(null, in);
+            
+            
+            /*
+            SOAPMessage msg = mf.createMessage();
+            SOAPEnvelope env = msg.getSOAPPart().getEnvelope ();
+            
+            env.addNamespaceDeclaration("SOAP-ENV", "http://schemas.xmlsoap.org/soap/envelope/");
+            env.addNamespaceDeclaration("SOAP-ENC","http://schemas.xmlsoap.org/soap/encoding/");
+            env.addNamespaceDeclaration("xsd","http://www.w3.org/2001/XMLSchema");
+            env.addNamespaceDeclaration("xsi","http://www.w3.org/2001/XMLSchema-instance");
+            env.addNamespaceDeclaration(CWMP,URN_CWMP);
+             */
+
+            //env.setEncodingStyle("http://schemas.xmlsoap.org/soap/encoding/");
+
+            SOAPHeaderElement elmntId = msg.getSOAPHeader().addHeaderElement(spf.createName("ID", CWMP, URN_CWMP));
+            elmntId.setValue(getId());
+            elmntId.setAttribute("SOAP-ENV:mustUnderstand", "1");
+            msg.getSOAPHeader().addHeaderElement(spf.createName("NoMoreRequests", CWMP, URN_CWMP)).setValue((noMore) ? "1" : "0");
+
+            SOAPBodyElement bd = msg.getSOAPBody().addBodyElement(spf.createName(name, CWMP, URN_CWMP));
+            if (name == null || name.equals("")) {
+                name = this.getClass().getSimpleName();
+            }
+            createBody(bd, spf);
+            //msg.setProperty(SOAPMessage.WRITE_XML_DECLARATION, true);
+            System.out.println("getContentDescription:"+msg.getContentDescription());//null
+            System.out.println("toString:"+msg.toString());
+            System.out.println("getContentId:"+msg.getSOAPPart().getContentId());
+            System.out.println("getContentLocation:"+msg.getSOAPPart().getContentLocation());
+            msg.writeTo(System.out);
+            msg.writeTo(out);
+        } catch (SOAPException ex) {
+            ex.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
     protected SOAPElement getRequestChildElement(SOAPFactory f, SOAPElement req, String name) throws SOAPException {
         Iterator i = req.getChildElements();
         while (i.hasNext()) {

@@ -1,5 +1,6 @@
 package com.study.acs;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,6 +35,8 @@ import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPMessage;
 
 import com.study.acs.Message;
+
+import com.study.acs.InformResponse;
 
 
 
@@ -227,6 +230,9 @@ public class AcsServlet extends HttpServlet {
     	SOAPMessage soapMsg = null;
     	xmlFilterInputStream f = new xmlFilterInputStream(request.getInputStream(), request.getContentLength());
     	MessageFactory mf;
+    	//ByteArrayOutputStream out = new ByteArrayOutputStream();
+       
+
     	
     	try {
 			mf = MessageFactory.newInstance();
@@ -254,7 +260,8 @@ public class AcsServlet extends HttpServlet {
     	System.out.println("csFrom = "+csFrom);
     	HttpSession session = request.getSession();
     	Inform lastInform = (Inform) session.getAttribute(ATTR_LASTINFORM);
-    	
+    	response.setContentType(ct != null ? ct : "text/xml;charset=UTF-8");
+    	 
         while (f.next()) {
         	MimeHeaders hdrs = new MimeHeaders();
         	hdrs.setHeader("Content-Type", "text/xml; charset=UTF-8");
@@ -274,6 +281,11 @@ public class AcsServlet extends HttpServlet {
             	 lastInform = (Inform) msg;
             	 System.out.println("-------------------------------------------CPE Information-------------------------------------------------------------------- ");
             	 System.out.println(lastInform.toString());
+            	 
+            	 InformResponse resp = new InformResponse(lastInform.getId(), MY_MAX_ENVELOPES);
+            	 
+            	 response.setStatus(HttpServletResponse.SC_OK);
+            	 resp.writeTo(response.getOutputStream());
              }
         }
         
@@ -304,4 +316,5 @@ public class AcsServlet extends HttpServlet {
 			e.printStackTrace();
 		}
 	}
+	private final int MY_MAX_ENVELOPES = 1;
 }
